@@ -21,7 +21,8 @@ def main():
             transitions.append(line.strip().split())
     fa = FiniteAutomata(states, alphabet, initial_state, accepted_states)
     for transition in transitions:
-        fa.set_transition(transition[0], transition[1], transition[2])
+        for char in transition[1]:
+            fa.set_transition(transition[0], char, transition[2])
 
     do_option = {}
     do_option["1"] = show_states

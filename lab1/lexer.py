@@ -31,12 +31,12 @@ class Lexer:
     kReserved = 'RESERVED'
     kConstant = 'CONSTANT'
     kIdentifier = 'IDENTIFIER'
-    kSeparatorList = [';', '(', ')', '{', '}']
+    kSeparatorList = [';', '(', ')', '{', '}', "\""]
     kSimpleOperatorList = ['<', '>', '=', '+', '-', '*', '/', '%']
     kComposedOperatorList = ['<=', '>=', '==', '!=', '>>', '<<']
     kOperatorList = kSimpleOperatorList + kComposedOperatorList
     kReservedList = ['int', 'double', 'string', 'if', 'else', 'while', 'cin', 'cout']
-    kNewLine = '$$#!_'
+    kPlaceholder = '$$#@@#'
 
     @staticmethod
     def is_constant(token):
@@ -44,16 +44,16 @@ class Lexer:
 
     @staticmethod
     def is_constant_int(token):
-        return re.match("^[0-9]+$", token) != None
+        return re.match("^[+-]?[0-9]+$", token) != None
 
     @staticmethod
     def is_constant_double(token):
         return Lexer.is_constant_int(token) or \
-                re.match("^[0-9]+\.[0-9]+$", token) != None
+                re.match("^[+-]?[0-9]+\.[0-9]+$", token) != None
 
     @staticmethod
     def is_identifier(token):
-        return re.match("^[a-zA-Z][a-zA-Z0-9]*$", token) != None
+        return re.match("^[a-zA-Z_][a-zA-Z_0-9]*$", token) != None
 
     def Start(self, source):
         self._errors = []
@@ -72,19 +72,21 @@ class Lexer:
     def _Preprocess(self, source):
         if len(self._errors) != 0:
             return
-        # Add spaces around kOperatorList and kSeparatorList to easily tokenize.
-        composed_operator_tmp_mapping = {}
+        # Replace composed operators with placeholders and add spaces around them.
+        composed_operator_to_placeholder = {}
         for operator in Lexer.kComposedOperatorList:
-            composed_operator_tmp_mapping[operator] = \
-                    '_^@#_' + str(len(composed_operator_tmp_mapping))
+            composed_operator_to_placeholder[operator] = \
+                    Lexer.kPlaceholder + str(len(composed_operator_to_placeholder))
             source = source.replace(operator, \
-                    ' ' + composed_operator_tmp_mapping[operator] + ' ')
+                    ' ' + composed_operator_to_placeholder[operator] + ' ')
+        # Add spaces around kSimpleOperatorList and kSeparatorList to easily tokenize.
         for char in Lexer.kSimpleOperatorList + Lexer.kSeparatorList:
             source = source.replace(char, ' ' + char + ' ')
+        # Return to the composed operators.
         for operator in Lexer.kComposedOperatorList:
-            source = source.replace(composed_operator_tmp_mapping[operator], operator)
+            source = source.replace(composed_operator_to_placeholder[operator], operator)
         # Replace newlines with a special character.
-        source = source.replace('\n', ' ' + Lexer.kNewLine + ' ')
+        source = source.replace('\n', ' ' + Lexer.kPlaceholder + ' ')
         return source
 
     def _Tokenize(self, source):
@@ -99,7 +101,7 @@ class Lexer:
         line = 1
         context = ''
         for token in raw_tokens:
-            if token == Lexer.kNewLine:
+            if token == Lexer.kPlaceholder:
                 line += 1
                 context = ''
                 continue
@@ -111,6 +113,16 @@ class Lexer:
             elif token in Lexer.kReservedList:
                 tokens.append(Token(Lexer.kReserved, token, context, line))
             elif Lexer.is_constant(token):
+                # We deal with negative and positive signs as part of 
+                # constants, not as operators.
+                if len(tokens) > 2 and \
+                    tokens[-1].type is Lexer.kOperator and \
+                    tokens[-1].content in ['-', '+'] and \
+                    tokens[-2].type is Lexer.kOperator and \
+                    tokens[-2].content in ['(', '=']:
+                        if tokens[-1].content is '-':
+                            token = tokens[-1].content + token
+                        tokens.pop()
                 tokens.append(Token(Lexer.kConstant, token, context, line))
             elif Lexer.is_identifier(token):
                 tokens.append(Token(Lexer.kIdentifier, token, context, line))
@@ -163,11 +175,11 @@ class SymbolTable:
         output = ""
         output += "Symbol Table :: Constants\n"
         for code, const in self.code_to_const.items():
-            output += "{0} :: {1}\n".format(code, const)
+            output += "{2} :: {1}\n".format(code, const, hash(const))
         output += '\n'
         output += "Symbol Table :: Identifiers\n"
         for code, id in self.code_to_id.items():
-            output += "{0} :: {1}\n".format(code, id)
+            output += "{2} :: {1}\n".format(code, id, hash(id))
         return output
 
 
@@ -185,10 +197,12 @@ class ProgramInternalForm:
         for token in tokens:
             if token.type is Lexer.kConstant:
                 self._pif.append((kMapping[Lexer.kConstant], \
-                        symbol_table.const_to_code[token.content]))
+                        hash(token.content)))
+                        #symbol_table.const_to_code[token.content]))
             elif token.type is Lexer.kIdentifier:
                 self._pif.append((kMapping[Lexer.kIdentifier], \
-                        symbol_table.id_to_code[token.content]))
+                        hash(token.content)))
+                        #symbol_table.id_to_code[token.content]))
             else:
                 self._pif.append((kMapping[token.content], -1))
 
