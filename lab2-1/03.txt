@@ -1,0 +1,15 @@
+init deca zero pre-bina bina octa pre-hexa hexa
+abcdefABCDEF0123456789x
+init
+deca zero bina octa hexa
+init 123456789 deca
+deca 0123456789 deca
+init 0 zero
+zero b pre-bina
+pre-bina 01 bina
+bina 01 bina
+zero 01234567 octa
+octa 01234567 octa
+zero x pre-hexa
+pre-hexa 0123456789abcdefABCDEF hexa
+hexa 0123456789abcdefABCDEF hexa
