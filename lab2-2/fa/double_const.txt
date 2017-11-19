@@ -1,0 +1,9 @@
+init int point frac
+0123456789.
+init
+int frac
+init 0123456789 int
+int 0123456789 int
+int . point 
+point 0123456789 frac
+frac 0123456789 frac
