@@ -205,7 +205,7 @@ class ProgramInternalForm:
                         #symbol_table.id_to_code[token.content]))
             else:
                 self._pif.append((kMapping[token.content], -1))
-
+                
 
     def __repr__(self):
         output = ""
