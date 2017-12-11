@@ -160,7 +160,7 @@ cout                        addPIF(yytext, 9, -1);
 \<<                         addPIF(yytext, 29, -1);
 {LETTER}({LETTER}|{DIGIT})* addId(yytext);
 {DIGIT}+                    addIntConst(yytext);
-{DIGIT}+"."{DIGIT}+         addDoubleConst(yytext);
+{DIGIT}+\.{DIGIT}+          addDoubleConst(yytext);
 
 
 [ \t\n]+                    ;
