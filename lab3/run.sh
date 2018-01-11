@@ -4,3 +4,4 @@ flex lexer.lx
 gcc -ll lex.yy.c
 ./a.out < $1
 rm a.out
+rm lex.yy.c

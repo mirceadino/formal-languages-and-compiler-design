@@ -1,0 +1,176 @@
+%{
+
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include "y.tab.h"
+
+#define bool int
+#define true 1
+#define false 0
+
+typedef struct {
+  int int_value;
+  double double_value;
+  bool is_int;
+  bool is_double;
+} STElement;
+
+int len_st;
+STElement st[500];
+
+typedef struct {
+  char id[250];
+} IDElement;
+
+int len_id;
+IDElement id[500];
+
+typedef struct {
+  int token_code;
+  int st_code;
+} PIFElement;
+
+int len_pif;
+PIFElement pif[500];
+
+void throwError(char* text) {
+  printf("%s\n", text);
+  exit(1);
+}
+
+void addPIF(char* token, int token_code, int st_code) {
+  PIFElement el;
+  el.token_code = token_code;
+  el.st_code = st_code;
+  pif[len_pif++] = el;
+}
+
+void addIntConst(char* token) {
+  int value = atoi(token);
+  for(int i=0; i<len_st; ++i) {
+    if(st[i].is_int && st[i].int_value == value) {
+      addPIF(token, 0, i);
+      return;
+    }
+  }
+  STElement el;
+  el.int_value = value;
+  el.is_int = true;
+  st[len_st++] = el;
+  addPIF(token, 0, len_st-1);
+}
+
+void addDoubleConst(char* token) {
+  double value = atof(token);
+  for(int i=0; i<len_st; ++i) {
+    if(st[i].is_double && st[i].double_value == value) {
+      addPIF(token, 0, i);
+      return;
+    }
+  }
+  STElement el;
+  el.double_value = value;
+  el.is_double = true;
+  st[len_st++] = el;
+  addPIF(token, 0, len_st-1);
+}
+
+void addId(char* token) {
+  if(strlen(token) > 8) {
+    throwError("Identifier is too long.");
+  }
+  for(int i=0; i<len_id; ++i) {
+    if(strcmp(id[i].id, token) == 0) {
+      addPIF(token, 1, i);
+      return;
+    }
+  }
+  IDElement el;
+  strcpy(el.id, token);
+  id[len_id++] = el;
+  addPIF(token, 1, len_id-1);
+}
+
+void illegalToken(char* token) {
+  printf("Illegal: %s\n", token);
+  throwError("Program stopped.");
+}
+
+void showST() {
+  printf("Symbol Table :: Constants\n");
+  for(int i=0; i<len_st; ++i) {
+    if(st[i].is_int == true) printf("%d :: %d\n", i, st[i].int_value);
+    if(st[i].is_double == true) printf("%d :: %f\n", i, st[i].double_value);
+  }
+  printf("\n");
+}
+
+void showID() {
+  printf("Symbol Table :: Identifiers\n");
+  for(int i=0; i<len_id; ++i) {
+    printf("%d :: %s\n", i, id[i].id);
+  }
+  printf("\n");
+}
+
+void showPIF() {
+  printf("Program Internal Form\n");
+  for(int i=0; i<len_pif; ++i) {
+    printf("(%d, %d)\n", pif[i].token_code, pif[i].st_code);
+  }
+  printf("\n");
+}
+
+void show() {
+  showST();
+  showID();
+  showPIF();
+}
+
+%}
+
+%option noyywrap
+
+DIGIT [0-9]
+LETTER [a-zA-Z_]
+
+%%
+
+int                         { addPIF(yytext, 2, -1); return TYPE; }
+double                      { addPIF(yytext, 3, -1); return TYPE; }
+string                      { addPIF(yytext, 4, -1); return TYPE; }
+if                          { addPIF(yytext, 5, -1); return IF; }
+else                        { addPIF(yytext, 6, -1); return ELSE; }
+while                       { addPIF(yytext, 7, -1); return WHILE; }
+cin                         { addPIF(yytext, 8, -1); return CIN; }
+cout                        { addPIF(yytext, 9, -1); return COUT; }
+\;                          { addPIF(yytext, 10, -1); return ';'; }
+\(                          { addPIF(yytext, 11, -1); return '('; }
+\)                          { addPIF(yytext, 12, -1); return ')'; }
+\{                          { addPIF(yytext, 13, -1); return '{'; }
+\}                          { addPIF(yytext, 14, -1); return '}'; }
+\"                          { addPIF(yytext, 15, -1); return '\"'; }
+\<                          { addPIF(yytext, 16, -1); return BOOL; }
+\>                          { addPIF(yytext, 17, -1); return BOOL; }
+\<=                         { addPIF(yytext, 18, -1); return BOOL; }
+\>=                         { addPIF(yytext, 19, -1); return BOOL; }
+\==                         { addPIF(yytext, 20, -1); return BOOL; }
+\!=                         { addPIF(yytext, 21, -1); return BOOL; }
+\=                          { addPIF(yytext, 22, -1); return '='; }
+\+                          { addPIF(yytext, 23, -1); return ADD; }
+\-                          { addPIF(yytext, 24, -1); return SUBSTRACT; }
+\*                          { addPIF(yytext, 25, -1); return MULTIPLY; }
+\/                          { addPIF(yytext, 26, -1); return DIVIDE; }
+\%                          { addPIF(yytext, 27, -1); return MODULO; }
+\>>                         { addPIF(yytext, 28, -1); return CIN_OP; }
+\<<                         { addPIF(yytext, 29, -1); return COUT_OP; }
+{LETTER}({LETTER}|{DIGIT})* { addId(yytext); return IDENTIFIER; }
+{DIGIT}+                    { addIntConst(yytext); return CONSTANT; }
+{DIGIT}+\.{DIGIT}+          { addDoubleConst(yytext); return CONSTANT; }
+
+
+[ \t\n]+                    ;
+.                           illegalToken(yytext);
+
+%%
