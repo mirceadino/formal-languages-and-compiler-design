@@ -6,10 +6,12 @@ class Token:
         self.name = name
         self.is_terminal = is_terminal
 
+    def __str__(self):
+        return repr(self)
+        # return "{0}(\'{1}\')]".format("Terminal" if self.is_terminal else "Non-terminal", self.name)
+
     def __repr__(self):
         return "{0}".format(self.name)
-        # return "{0}(\'{1}\')]".format("Terminal" if self.is_terminal else "Non-terminal", self.name)
-        # return "[{0}, {1}]".format(self.name, self.is_terminal)
 
 
 class Rule:
@@ -21,16 +23,20 @@ class Rule:
         self.rhs = rhs
 
     def __repr__(self):
+        return repr(self.id)
+
+    def __str__(self):
         r = "#{0}. {1} -> ".format(self.id, self.lhs)
-        for t in self.rhs:
-            r += str(t) + " "
+        for token in self.rhs:
+            r += str(token) + " "
         r = r[:-1]
         return r
 
 
 class Grammar:
     def __init__(self):
-        self.tokens = {}
+        self.empty_token = Token("$", True)
+        self.tokens = {self.empty_token.name: self.empty_token}
         self.rules = {}
 
     def add_token(self, name, is_terminal=False):
@@ -38,6 +44,8 @@ class Grammar:
         self.tokens[name] = token
 
     def add_rule(self, lhs, rhs):
+        if len(rhs) is 0:
+            rhs = [self.empty_token.name]
         rule = Rule(self.tokens[lhs], list(map(lambda x: self.tokens[x], rhs)))
         rule.id = len(self.rules) + 1
         self.rules[rule.id] = rule
@@ -57,12 +65,12 @@ class Grammar:
     def rules_for(self, token_name):
         return list(filter(lambda x: x.lhs.name is token_name, self.rules.values()))
 
-    def __repr__(self):
-        r = ""
+    def __str__(self):
+        r = "  Grammar:\n"
         r += "Terminal tokens: {0}\n".format(self.terminal_tokens())
         r += "Non-terminal tokens: {0}\n".format(self.non_terminal_tokens())
         r += "Rules:\n"
         for rule in self.all_rules(): 
             r += str(rule) + '\n'
-        r = r[:-1]
+        r += "-----"
         return r
