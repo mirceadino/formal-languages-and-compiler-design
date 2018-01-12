@@ -29,7 +29,7 @@ class ParsingTable:
     def rule(self, non_terminal_name, terminal_name):
         try:
             return self.rules[non_terminal_name][terminal_name]
-        except ValueError:
+        except KeyError:
             return None
 
     def __repr__(self):
@@ -48,7 +48,7 @@ class LL1Parser:
     def parse(self, stream, stack):
         derivations = []
         num_steps = 0
-        while len(stream) != 0:
+        while len(stream) != 0 and len(stack) != 0:
             print("  Step #{0}".format(num_steps))
             print("Stream: {0}".format(stream))
             print("Stack: {0}".format(stack))
@@ -69,4 +69,7 @@ class LL1Parser:
                     break
             num_steps += 1
             print("-----")
+        if len(stream) != 0 and len(stack) is 0:
+            print("Error. Stack is empty.")
+            derivations = []
         return derivations

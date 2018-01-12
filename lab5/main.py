@@ -10,7 +10,7 @@ def main():
     print(parsing_table)
 
     parser = LL1Parser(parsing_table)
-    stream = ["(", "a", "+", ")"]
+    stream = ["(", "a", "+", "a", ")"]
     stack = ["S"]
     derivations = parser.parse(stream, stack)
 
