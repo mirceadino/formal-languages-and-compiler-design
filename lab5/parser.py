@@ -12,8 +12,9 @@ class ParsingTable:
             return [token]
         all_left_terminals = []
         for rule in self.grammar.rules_for(token.name):
-            left_token = rule.rhs[0]
-            all_left_terminals += self._left_terminals(left_token)
+            if len(rule.rhs) != 0:
+                left_token = rule.rhs[0]
+                all_left_terminals += self._left_terminals(left_token)
         return all_left_terminals
     
     def _build(self):
@@ -23,8 +24,12 @@ class ParsingTable:
             for terminal in grammar.terminal_tokens():
                 self.rules[non_terminal.name][terminal.name] = None
             for rule in grammar.rules_for(non_terminal.name):
-                for terminal in self._left_terminals(rule.rhs[0]):
-                    self.rules[non_terminal.name][terminal.name] = rule
+                if len(rule.rhs) != 0:
+                    for terminal in self._left_terminals(rule.rhs[0]):
+                        self.rules[non_terminal.name][terminal.name] = rule
+                else:
+                    for terminal_name in self.rules[non_terminal.name].keys():
+                        self.rules[non_terminal.name][terminal_name] = rule
 
     def rule(self, non_terminal_name, terminal_name):
         try:
@@ -55,7 +60,7 @@ class LL1Parser:
             from_stream = stream[0]
             from_stack = stack[0]
             stack = stack[1:]
-            if from_stream is from_stack:
+            if from_stream == from_stack:
                 stream = stream[1:]
             else:
                 rule = self.parsing_table.rule(from_stack, from_stream)

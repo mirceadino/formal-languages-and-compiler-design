@@ -35,17 +35,19 @@ class Rule:
 
 class Grammar:
     def __init__(self):
-        self.empty_token = Token("$", True)
-        self.tokens = {self.empty_token.name: self.empty_token}
+        self.tokens = {}
         self.rules = {}
 
     def add_token(self, name, is_terminal=False):
         token = Token(name, is_terminal)
         self.tokens[name] = token
 
+    def add_tokens(self, names, is_terminal=False):
+        tokens = list(map(lambda x: Token(x, is_terminal), names))
+        for token in tokens:
+            self.tokens[token.name] = token
+
     def add_rule(self, lhs, rhs):
-        if len(rhs) is 0:
-            rhs = [self.empty_token.name]
         rule = Rule(self.tokens[lhs], list(map(lambda x: self.tokens[x], rhs)))
         rule.id = len(self.rules) + 1
         self.rules[rule.id] = rule
