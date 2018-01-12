@@ -1,6 +1,9 @@
+from grammar_factory import GrammarFactory
+
 
 def main():
-    pass
+    grammar = GrammarFactory.wikipedia()
+    print(grammar)
 
 
 if __name__ == "__main__":
